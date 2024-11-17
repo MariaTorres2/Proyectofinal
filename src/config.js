@@ -1,0 +1,1 @@
+export const gtoken = process.env.gtoken || "secret";
