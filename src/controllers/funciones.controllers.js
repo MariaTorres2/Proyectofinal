@@ -2,9 +2,8 @@ import Bitacora from "../models/bitacora.model.js";
 import Muestreo from "../models/muestreo.model.js";
 import Especie from "../models/especie.model.js";
 import { MongoClient } from "mongodb";
-const url = "mongodb://localhost:27017";  
+const url = "mongodb+srv://sa:123m@cluster0.il7ek.mongodb.net/bitacoras?retryWrites=true&w=majority&appName=Cluster0";  
 const client = new MongoClient(url);
-
 
 ////bitacora
 export const getbitacoras = async (req, res) => {
