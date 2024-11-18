@@ -33,7 +33,7 @@ const bitacoraSchema = new mongoose.Schema(
     },
     imagen_sitio: {
       type: String,
-      required: true,
+      required: false,
     },
     descripcion_habitat: {
       type: String,

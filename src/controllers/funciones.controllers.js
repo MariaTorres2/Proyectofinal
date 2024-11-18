@@ -2,6 +2,7 @@ import Bitacora from "../models/bitacora.model.js";
 import Muestreo from "../models/muestreo.model.js";
 import Especie from "../models/especie.model.js";
 import Usuario from "../models/user.model.js";
+import { v4 as uuidv4 } from 'uuid';
 
 // Bitácoras
 
@@ -34,7 +35,6 @@ export const getbitacora = async (req, res) => {
 // Crear una nueva bitácora
 export const createbitacora = async (req, res) => {
   const {
-    id_bitacora,
     titulo,
     fecha,
     hora,
@@ -46,6 +46,9 @@ export const createbitacora = async (req, res) => {
   } = req.body;
 
   try {
+    // Generar ID único para la bitácora
+    const id_bitacora = uuidv4();
+
     const nuevaBitacora = new Bitacora({
       id_bitacora,
       titulo,

@@ -1,7 +1,6 @@
 import Usuario from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import { createToken} from "../libs/jwt.js";
-import { set } from "mongoose";
 
 export const registrar = async (req, res) => {
   console.log(req.body); 
