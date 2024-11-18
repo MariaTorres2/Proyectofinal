@@ -1,36 +1,53 @@
 import mongoose from "mongoose";
 
-const bitacoraSchema = new mongoose.Schema({
+const bitacoraSchema = new mongoose.Schema(
+  {
     id_bitacora: {
-        type: String,
-        required: true,
-        trim: true,
-        unique: true,
-      },
-    titulo: { 
-        type: String, 
-        required: true },
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
+    },
+    titulo: {
+      type: String,
+      required: true,
+      trim: true, // Elimina espacios adicionales
+    },
     fecha: {
-        type: Date, 
-        required: true },
-    hora: 
-    { type: String, 
-        required: true },
-    coordenadas: 
-    { type: String, 
-        required: true },
-    condiciones_climaticas: 
-    { type: String, 
-        required: true },
+      type: Date,
+      required: true,
+    },
+    hora: {
+      type: String,
+      required: true,
+    },
+    coordenadas: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    condiciones_climaticas: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     imagen_sitio: {
-         type: String,
-          required: true },
+      type: String,
+      required: true,
+    },
     descripcion_habitat: {
-         type: String,
-          required: true },
-    observaciones: { 
-        type: String, 
-        required: false },
-  });
+      type: String,
+      required: true,
+      trim: true,
+    },
+    observaciones: {
+      type: String,
+      trim: true,
+    },
+  },
+  {
+    timestamps: true, 
+  }
+);
 
-  export default mongoose.model('Bitacora', bitacoraSchema);
+export default mongoose.model("Bitacora", bitacoraSchema);

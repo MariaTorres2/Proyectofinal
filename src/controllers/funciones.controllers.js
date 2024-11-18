@@ -1,58 +1,51 @@
 import Bitacora from "../models/bitacora.model.js";
 import Muestreo from "../models/muestreo.model.js";
 import Especie from "../models/especie.model.js";
-import { MongoClient } from "mongodb";
-const url = "mongodb+srv://sa:123m@cluster0.il7ek.mongodb.net/bitacoras?retryWrites=true&w=majority&appName=Cluster0";  
-const client = new MongoClient(url);
+import Usuario from "../models/user.model.js";
 
-////bitacora
+// Bitácoras
+
+// Obtener todas las bitácoras
 export const getbitacoras = async (req, res) => {
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-    .collection("bitacoras").find().toArray();
-    res.json(result);
+    const bitacoras = await Bitacora.find();
+    res.status(200).json(bitacoras);
   } catch (error) {
-    console.error("Error al obtener bitacoras:", error);
-    res.json({ error: "Error al obtener bitacoras" });
-  } 
-}
+    console.error("Error al obtener bitácoras:", error);
+    res.status(500).json({ error: "Error al obtener bitácoras" });
+  }
+};
 
+// Obtener una bitácora por ID
 export const getbitacora = async (req, res) => {
-  let { id_bitacora} = req.params;
+  const { id_bitacora } = req.params;
+  try {
+    const bitacora = await Bitacora.findOne({ id_bitacora });
+    if (!bitacora) {
+      return res.status(404).json({ message: `Bitácora con ID ${id_bitacora} no encontrada` });
+    }
+    res.status(200).json(bitacora);
+  } catch (error) {
+    console.error("Error al obtener bitácora:", error);
+    res.status(500).json({ error: "Error al obtener bitácora" });
+  }
+};
+
+// Crear una nueva bitácora
+export const createbitacora = async (req, res) => {
+  const {
+    id_bitacora,
+    titulo,
+    fecha,
+    hora,
+    coordenadas,
+    condiciones_climaticas,
+    imagen_sitio,
+    descripcion_habitat,
+    observaciones,
+  } = req.body;
 
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-      .collection("bitacoras")
-      .findOne({ id_bitacora });
-    if (result) {
-      res.json(result);
-    } else {
-      res
-        .json({ message: `Bitacora con id ${id_bitacora} no encontrado.` });
-    }
-  } catch (error) {
-    console.error("Error al obtener la bitacora:", error);
-    res.json({ error: "Error al obtener la bitacora" });
-  } 
-}
-
-export const createbitacora = async (req, res) => {
-    const {
-      id_bitacora,
-      titulo,
-      fecha,
-      hora,
-      coordenadas,
-      condiciones_climaticas,
-      imagen_sitio,
-      descripcion_habitat,
-      observaciones,
-    } = req.body;
-  
     const nuevaBitacora = new Bitacora({
       id_bitacora,
       titulo,
@@ -64,402 +57,280 @@ export const createbitacora = async (req, res) => {
       descripcion_habitat,
       observaciones,
     });
-  
-    try {
-      const bitacoraExistente = await Bitacora.findOne({ titulo, fecha });
-  
-      if (bitacoraExistente) {
-        return res.status(400).json({
-          error: "La bitácora con el mismo título y fecha ya existe",
-        });
-      }
-  
-      const bitacoraGuardar = await nuevaBitacora.save();
-  
-      res.status(201).json({
-        message: "Bitácora agregada",
-        data: bitacoraGuardar,
-      });
-    } catch (error) {
-      console.error("Error al agregar bitácora:", error);
-      res.status(500).json({ error: `Error al agregar bitácora: ${error.message}` });
-    }
-  };
-    
 
+    const bitacoraGuardada = await nuevaBitacora.save();
+    res.status(201).json(bitacoraGuardada);
+  } catch (error) {
+    console.error("Error al crear bitácora:", error);
+    res.status(500).json({ error: "Error al crear bitácora" });
+  }
+};
 
+// Actualizar una bitácora
 export const updatebitacora = async (req, res) => {
-  let { id_bitacora } = req.params;
+  const { id_bitacora } = req.params;
   const updatedData = req.body;
 
-  if (!updatedData || Object.keys(updatedData).length === 0) {
-    return res.json({ message: "No se proporcionaron datos para actualizar." });
-  }
-
-  console.log("Actualizando bitácora con id:", id_bitacora);
-
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-      .collection("bitacoras")
-      .updateOne({ id_bitacora: id_bitacora }, { $set: updatedData });
-
-    if (result.modifiedCount > 0) {
-      res.json({ message: `Bitácora con id ${id_bitacora} actualizada.` });
-    } else {
-      res.json({ message: `No se encontró bitácora con id ${id_bitacora}.` });
+    const bitacoraActualizada = await Bitacora.findOneAndUpdate(
+      { id_bitacora },
+      updatedData,
+      { new: true }
+    );
+    if (!bitacoraActualizada) {
+      return res.status(404).json({ message: `Bitácora con ID ${id_bitacora} no encontrada` });
     }
+    res.status(200).json(bitacoraActualizada);
   } catch (error) {
     console.error("Error al actualizar bitácora:", error);
-    res.json({ error: "Error al actualizar bitácora" });
-  } 
-    
-}
+    res.status(500).json({ error: "Error al actualizar bitácora" });
+  }
+};
 
+// Eliminar una bitácora
 export const deletebitacora = async (req, res) => {
-  let { id_bitacora } = req.params;
-
+  const { id_bitacora } = req.params;
   try {
-
-    await client.connect();  
-    const db = client.db("Botanica");  
-    const result = await db.collection("bitacoras").deleteOne({ id_bitacora });  
-
-    if (result.deletedCount > 0) {
-      res.json({ message: `Bitácora con id ${id_bitacora} eliminada.` });
-    } else {
-      res.json({ message: `No existe ninguna bitácora con id ${id_bitacora}.` });
+    const bitacoraEliminada = await Bitacora.findOneAndDelete({ id_bitacora });
+    if (!bitacoraEliminada) {
+      return res.status(404).json({ message: `Bitácora con ID ${id_bitacora} no encontrada` });
     }
+    res.status(200).json({ message: "Bitácora eliminada" });
   } catch (error) {
     console.error("Error al eliminar bitácora:", error);
     res.status(500).json({ error: "Error al eliminar bitácora" });
-  } 
+  }
 };
 
-////Muestreo
+// Muestreos
 
-export const getmuestreos= async (req, res) => {
+// Obtener todos los muestreos
+export const getmuestreos = async (req, res) => {
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-    .collection("muestreos").find().toArray();
-    res.json(result);
+    const muestreos = await Muestreo.find();
+    res.status(200).json(muestreos);
   } catch (error) {
     console.error("Error al obtener muestreos:", error);
-    res.json({ error: "Error al obtener muestreos" });
-  } 
-}
+    res.status(500).json({ error: "Error al obtener muestreos" });
+  }
+};
 
+// Obtener un muestreo por ID
 export const getmuestreo = async (req, res) => {
-  let {id_muestreo} = req.params;
-
+  const { id_muestreo } = req.params;
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-      .collection("muestreos")
-      .findOne({ id_muestreo });
-    if (result) {
-      res.json(result);
-    } else {
-      res
-        .json({ message: `Bitacora con id ${id_muestreo} no encontrado.` });
+    const muestreo = await Muestreo.findOne({ id_muestreo });
+    if (!muestreo) {
+      return res.status(404).json({ message: `Muestreo con ID ${id_muestreo} no encontrado` });
     }
+    res.status(200).json(muestreo);
   } catch (error) {
-    console.error("Error al obtener el muestreo:", error);
-    res.json({ error: "Error al obtener el muestro" });
-  } 
-}
+    console.error("Error al obtener muestreo:", error);
+    res.status(500).json({ error: "Error al obtener muestreo" });
+  }
+};
 
-export const createmuestreo= async (req, res) => {
-  const {
-    id_muestreo,
-    fecha,
-    tamano_muestra,
-    metodo_estudio
-  } = req.body;
-
-  const nuevoMuestreo = new Muestreo({
-    id_muestreo,
-    fecha,
-    tamano_muestra,
-    metodo_estudio
-  });
+// Crear un nuevo muestreo
+export const createmuestreo = async (req, res) => {
+  const { id_muestreo, fecha, tamano_muestra, metodo_estudio } = req.body;
 
   try {
-    const muestreoExistente = await Muestreo.findOne({ id_muestreo });
-
-    if (muestreoExistente) {
-      return res.status(400).json({
-        error: "El muestreo ya existe",
-      });
-    }
-    const muestreoGuardar = await nuevoMuestreo.save();
-    res.status(201).json({
-      message: "Muestreo agregado",
-      data: muestreoGuardar,
+    const nuevoMuestreo = new Muestreo({
+      id_muestreo,
+      fecha,
+      tamano_muestra,
+      metodo_estudio,
     });
-  } catch (error) {
-    console.error("Error al agregar muestreo:", error);
-    res.status(500).json({ error: `Error al agregar muestreo: ${error.message}` });
-  } 
-}
 
+    const muestreoGuardado = await nuevoMuestreo.save();
+    res.status(201).json(muestreoGuardado);
+  } catch (error) {
+    console.error("Error al crear muestreo:", error);
+    res.status(500).json({ error: "Error al crear muestreo" });
+  }
+};
+
+// Actualizar un muestreo
 export const updatemuestreo = async (req, res) => {
-  let { id_muestreo } = req.params;
+  const { id_muestreo } = req.params;
   const updatedData = req.body;
 
-  if (!updatedData || Object.keys(updatedData).length === 0) {
-    return res.json({ message: "No se proporcionaron datos para actualizar." });
-  }
-
-  console.log("Actualizando muestreo con id:", id_muestreo);
-
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-      .collection("muestreos")
-      .updateOne({ id_muestreo: id_muestreo}, { $set: updatedData });
-
-    if (result.modifiedCount > 0) {
-      res.json({ message: `Muestreo con id ${id_muestreo} actualizada.` });
-    } else {
-      res.json({ message: `No se encontró muestreo con id ${id_muestreo}.` });
+    const muestreoActualizado = await Muestreo.findOneAndUpdate(
+      { id_muestreo },
+      updatedData,
+      { new: true }
+    );
+    if (!muestreoActualizado) {
+      return res.status(404).json({ message: `Muestreo con ID ${id_muestreo} no encontrado` });
     }
+    res.status(200).json(muestreoActualizado);
   } catch (error) {
     console.error("Error al actualizar muestreo:", error);
-    res.json({ error: "Error al actualizar muestreo" });
-  } 
-    
-}
+    res.status(500).json({ error: "Error al actualizar muestreo" });
+  }
+};
 
+// Eliminar un muestreo
 export const deletemuestreo = async (req, res) => {
-  let { id_muestreo } = req.params;
-
+  const { id_muestreo } = req.params;
   try {
-
-    await client.connect();  
-    const db = client.db("Botanica");  
-    const result = await db.collection("muestreos").deleteOne({ id_muestreo });  
-
-    if (result.deletedCount > 0) {
-      res.json({ message: `Muestreos con id ${id_muestreo} eliminada.` });
-    } else {
-      res.json({ message: `No existe ningun muestreo con id ${id_muestreo}.` });
+    const muestreoEliminado = await Muestreo.findOneAndDelete({ id_muestreo });
+    if (!muestreoEliminado) {
+      return res.status(404).json({ message: `Muestreo con ID ${id_muestreo} no encontrado` });
     }
+    res.status(200).json({ message: "Muestreo eliminado" });
   } catch (error) {
     console.error("Error al eliminar muestreo:", error);
     res.status(500).json({ error: "Error al eliminar muestreo" });
-  } 
-    
-}
+  }
+};
 
-////Especie
+// Especies
 
-export const getespecies= async (req, res) => {
+// Obtener todas las especies
+export const getespecies = async (req, res) => {
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-    .collection("especies").find().toArray();
-    res.json(result);
+    const especies = await Especie.find();
+    res.status(200).json(especies);
   } catch (error) {
     console.error("Error al obtener especies:", error);
-    res.json({ error: "Error al obtener especies" });
-  } 
-}
+    res.status(500).json({ error: "Error al obtener especies" });
+  }
+};
 
+// Obtener una especie por ID
 export const getespecie = async (req, res) => {
-  let {id_especie} = req.params;
-
+  const { id_especie } = req.params;
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-      .collection("especies")
-      .findOne({ id_especie});
-    if (result) {
-      res.json(result);
-    } else {
-      res
-        .json({ message: `Especie con id ${id_especie} no encontrada.` });
+    const especie = await Especie.findOne({ id_especie });
+    if (!especie) {
+      return res.status(404).json({ message: `Especie con ID ${id_especie} no encontrada` });
     }
+    res.status(200).json(especie);
   } catch (error) {
-    console.error("Error al obtener la especie:", error);
-    res.json({ error: "Error al obtener la especie" });
-  } 
-    
-}
+    console.error("Error al obtener especie:", error);
+    res.status(500).json({ error: "Error al obtener especie" });
+  }
+};
 
-export const createspecie= async (req, res) => {
-  const {
-    id_especie,
-    nombre_cientifico,
-    nombre_comun,
-    familia,
-    cantidad_muestra,
-  } = req.body;
-
-  const nuevoEspecie = new Especie({
-    id_especie,
-    nombre_cientifico,
-    nombre_comun,
-    familia,
-    cantidad_muestra,
-  });
+// Crear una nueva especie
+export const createspecie = async (req, res) => {
+  const { id_especie, nombre_cientifico, nombre_comun, familia, cantidad_muestra } = req.body;
 
   try {
-    const especieExistente = await Especie.findOne({ id_especie});
-
-    if (especieExistente) {
-      return res.status(400).json({
-        error: "La especie ya existe",
-      });
-    }
-    const especieGuardar = await nuevoEspecie .save();
-    res.status(201).json({
-      message: "Especie agregada",
-      data: especieGuardar,
+    const nuevaEspecie = new Especie({
+      id_especie,
+      nombre_cientifico,
+      nombre_comun,
+      familia,
+      cantidad_muestra,
     });
-  } catch (error) {
-    console.error("Error al agregar especie:", error);
-    res.status(500).json({ error: `Error al agregar especie: ${error.message}` });
-  } 
-    
-}
 
+    const especieGuardada = await nuevaEspecie.save();
+    res.status(201).json(especieGuardada);
+  } catch (error) {
+    console.error("Error al crear especie:", error);
+    res.status(500).json({ error: "Error al crear especie" });
+  }
+};
+
+// Actualizar una especie
 export const updatespecie = async (req, res) => {
-  let { id_especie } = req.params;
+  const { id_especie } = req.params;
   const updatedData = req.body;
 
-  if (!updatedData || Object.keys(updatedData).length === 0) {
-    return res.json({ message: "No se proporcionaron datos para actualizar." });
-  }
-
-  console.log("Actualizando especie con id:", id_especie);
-
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-      .collection("especies")
-      .updateOne({ id_especie: id_especie}, { $set: updatedData });
-
-    if (result.modifiedCount > 0) {
-      res.json({ message: `Especie con id ${id_especie} actualizada.` });
-    } else {
-      res.json({ message: `No se encontró especie con id ${id_especie}.` });
+    const especieActualizada = await Especie.findOneAndUpdate(
+      { id_especie },
+      updatedData,
+      { new: true }
+    );
+    if (!especieActualizada) {
+      return res.status(404).json({ message: `Especie con ID ${id_especie} no encontrada` });
     }
+    res.status(200).json(especieActualizada);
   } catch (error) {
     console.error("Error al actualizar especie:", error);
-    res.json({ error: "Error al actualizar especie" });
-  } 
-    
-}
+    res.status(500).json({ error: "Error al actualizar especie" });
+  }
+};
 
+// Eliminar una especie
 export const deleteespecie = async (req, res) => {
-  let { id_especie } = req.params;
-
+  const { id_especie } = req.params;
   try {
-
-    await client.connect();  
-    const db = client.db("Botanica");  
-    const result = await db.collection("especies").deleteOne({ id_especie });  
-
-    if (result.deletedCount > 0) {
-      res.json({ message: `Especie con id ${id_especie} eliminada.` });
-    } else {
-      res.json({ message: `No existe ninguna especie con id ${id_especie}.` });
+    const especieEliminada = await Especie.findOneAndDelete({ id_especie });
+    if (!especieEliminada) {
+      return res.status(404).json({ message: `Especie con ID ${id_especie} no encontrada` });
     }
+    res.status(200).json({ message: "Especie eliminada" });
   } catch (error) {
     console.error("Error al eliminar especie:", error);
     res.status(500).json({ error: "Error al eliminar especie" });
-  } 
-    
-}
+  }
+};
 
-////Usuario
+// Usuarios
 
-export const getusuarios= async (req, res) => {
-
+// Obtener todos los usuarios
+export const getusuarios = async (req, res) => {
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-    .collection("usuarios").find().toArray();
-    res.json(result);
+    const usuarios = await Usuario.find();
+    res.status(200).json(usuarios);
   } catch (error) {
     console.error("Error al obtener usuarios:", error);
-    res.json({ error: "Error al obtener usuarios" });
-  } 
-}
+    res.status(500).json({ error: "Error al obtener usuarios" });
+  }
+};
 
+// Obtener un usuario por documento
 export const getusuario = async (req, res) => {
-  let {documento} = req.params;
+  const { documento } = req.params;
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-      .collection("usuarios")
-      .findOne({documento});
-    if (result) {
-      res.json(result);
-    } else {
-      res
-        .json({ message: `Uusuario con documento ${documento} no encontrado.` });
+    const usuario = await Usuario.findOne({ documento });
+    if (!usuario) {
+      return res.status(404).json({ message: `Usuario con documento ${documento} no encontrado` });
     }
+    res.status(200).json(usuario);
   } catch (error) {
-    console.error("Error al obtener el usuario:", error);
-    res.json({ error: "Error al obtener el usuario" });
-  } 
-}
+    console.error("Error al obtener usuario:", error);
+    res.status(500).json({ error: "Error al obtener usuario" });
+  }
+};
 
+// Actualizar un usuario
 export const updateusuario = async (req, res) => {
-  let { documento } = req.params;
+  const { documento } = req.params;
   const updatedData = req.body;
 
-  if (!updatedData || Object.keys(updatedData).length === 0) {
-    return res.json({ message: "No se proporcionaron datos para actualizar." });
-  }
-
-  console.log("Actualizando usuario con documento:", documento);
-
   try {
-    await client.connect();  
-    const db = client.db("Botanica"); 
-    const result = await db
-      .collection("usuarios")
-      .updateOne({ documento: documento}, { $set: updatedData });
-
-    if (result.modifiedCount > 0) {
-      res.json({ message: `Usuario con documento ${documento} actualizada.` });
-    } else {
-      res.json({ message: `No se encontró usuario con documento ${documento}.` });
+    const usuarioActualizado = await Usuario.findOneAndUpdate(
+      { documento },
+      updatedData,
+      { new: true }
+    );
+    if (!usuarioActualizado) {
+      return res.status(404).json({ message: `Usuario con documento ${documento} no encontrado` });
     }
+    res.status(200).json(usuarioActualizado);
   } catch (error) {
     console.error("Error al actualizar usuario:", error);
-    res.json({ error: "Error al actualizar usuario" });
-  } 
-    
-}
+    res.status(500).json({ error: "Error al actualizar usuario" });
+  }
+};
 
-export const deleteusuario= async (req, res) => {
-  let { documento } = req.params;
+// Eliminar un usuario
+export const deleteusuario = async (req, res) => {
+  const { documento } = req.params;
   try {
-    await client.connect();  
-    const db = client.db("Botanica");  
-    const result = await db.collection("usuarios").deleteOne({ documento });  
-
-    if (result.deletedCount > 0) {
-      res.json({ message: `Usuario con documento ${documento} eliminado.` });
-    } else {
-      res.json({ message: `No existe ningun usuario con documento ${documento}.` });
+    const usuarioEliminado = await Usuario.findOneAndDelete({ documento });
+    if (!usuarioEliminado) {
+      return res.status(404).json({ message: `Usuario con documento ${documento} no encontrado` });
     }
+    res.status(200).json({ message: "Usuario eliminado" });
   } catch (error) {
     console.error("Error al eliminar usuario:", error);
     res.status(500).json({ error: "Error al eliminar usuario" });
-  }    
-}
+  }
+};
